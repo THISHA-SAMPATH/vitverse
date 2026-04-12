@@ -2,7 +2,7 @@
 # VITVerse 🎓
 ### 4 Campuses, 1 Smart Clubs & Events Ecosystem
 
-> A production-ready, full-stack platform for VIT Vellore, Chennai, AP, and Bhopal — featuring AI-powered recommendations, real-time seat booking, FOC/FSES tracking, cross-campus leaderboards, and a student portfolio system.
+> A production-ready, full-stack platform for VIT Vellore, Chennai, AP, and Bhopal — featuring AI-powered recommendations, real-time seat booking, FFCS tracking, cross-campus leaderboards, and a student portfolio system.
 
 ---
 
@@ -16,7 +16,7 @@ vitverse/
 │   │   ├── users/          # User management + sessions
 │   │   ├── events/         # Event CRUD + attendance
 │   │   ├── clubs/          # Club ecosystem + health scoring
-│   │   ├── seats/          # ⚡ Concurrency engine (Redis + BullMQ)
+│   │   ├── seats/          # Concurrency engine (Redis + BullMQ)
 │   │   ├── leaderboard/    # Points + rankings (PostgreSQL window fns)
 │   │   ├── foc/            # FOC/FSES credit workflow
 │   │   ├── portfolio/      # Student profiles + skill radar
@@ -70,7 +70,7 @@ vitverse/
 
 ---
 
-## 🔥 Key Engineering Features
+## Key Engineering Features
 
 ### ⚡ Seat Booking Concurrency Engine
 - **5-minute hold** with Redis TTL — no DB write until confirmed
@@ -87,7 +87,7 @@ BullMQ job scheduled → User confirms → DB set to BOOKED →
 Redis lock released → Socket broadcasts update to room
 ```
 
-### 🤖 AI Features
+###  AI Features
 - **Event Recommendations** — GPT-4o ranks upcoming events by user interest profile
 - **Poster OCR** — Upload poster image → AI extracts title, venue, date, tags
 - **VITBot Campus Chatbot** — RAG over events/clubs/FOC data, campus-aware
@@ -95,13 +95,13 @@ Redis lock released → Socket broadcasts update to room
 - **Semantic Search** — Natural language search (e.g. "Python + networking events")
 - **Club Health Score** — Algorithm scores activity, retention, attendance
 
-### 🏆 Leaderboard System
+###  Leaderboard System
 - **PostgreSQL RANK() window functions** for real-time rankings
 - **3 tiers:** Student → Club → Campus
 - **Podium UI** for top 3, glass table for the rest
 - **Point transactions** tracked per event/action
 
-### 📚 FOC/FSES Module (VIT-specific)
+###  FFCS Module (VIT-specific)
 - **Activity submission** with proof upload
 - **Faculty approval** workflow with notes
 - **Credit computation** (hours × 0.5 = credits)
@@ -111,7 +111,7 @@ Redis lock released → Socket broadcasts update to room
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - Node.js 20+
@@ -245,7 +245,7 @@ border: 1px solid rgba(255, 255, 255, 0.08);
 
 ---
 
-## 🗺️ Phased Roadmap
+##  Phased Roadmap
 
 | Phase | Status | Features |
 |-------|--------|----------|
@@ -257,7 +257,7 @@ border: 1px solid rgba(255, 255, 255, 0.08);
 
 ---
 
-## 📦 Deployment
+##  Deployment
 
 ### Frontend → Vercel
 ```bash
@@ -285,7 +285,7 @@ REDIS_PASSWORD=...
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repo
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
