@@ -300,8 +300,6 @@ REDIS_PASSWORD=...
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
-
-Built with ❤️ for VIT students by the VITVerse team.
 =======
 # vitverse
 Full-stack VIT campus app | Next.js + NestJS + PostgreSQL + Redis + Socket.io + AI 
