@@ -1,0 +1,670 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CampusInfo {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  campus        Campus   @unique
+  displayName   String
+  city          String
+  state         String
+  address       String?
+  contactEmail  String?
+  contactPhone  String?
+  logoUrl       String?
+  coverImageUrl String?
+  totalPoints   Int      @default(0)
+  createdAt     DateTime @default(now())
+  events        Event[]
+  venues        Venue[]
+
+  @@map("campus_info")
+}
+
+model User {
+  id              String             @id @default(uuid())
+  email           String             @unique
+  passwordHash    String
+  name            String
+  regNumber       String?            @unique
+  campus          Campus?
+  role            Role               @default(STUDENT)
+  avatar          String?
+  bio             String?
+  department      String?
+  year            Int?
+  phone           String?
+  isVerified      Boolean            @default(false)
+  isActive        Boolean            @default(true)
+  points          Int                @default(0)
+  streakDays      Int                @default(0)
+  lastActiveAt    DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  attendances     Attendance[]
+  auditLogs       AuditLog[]         @relation("AuditUser")
+  bookings        Booking[]
+  certificates    Certificate[]
+  clubMemberships ClubMember[]
+  facultyClubs    Club[]             @relation("FacultyCoordinator")
+  presidentOf     Club[]             @relation("ClubPresident")
+  createdEvents   Event[]            @relation("EventCreator")
+  focActivities   FocActivity[]
+  notifications   Notification[]
+  pointTxns       PointTransaction[]
+  lockedSeats     Seat[]             @relation("SeatLockedBy")
+  sessions        Session[]
+  skillRadar      SkillRadar?
+  teamMemberships TeamMember[]
+  teamsCreated    Team[]             @relation("TeamCreator")
+  achievements    UserAchievement[]
+  badges          UserBadge[]
+
+  @@index([campus])
+  @@index([role])
+  @@index([points])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  device    String?
+  ip        String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Venue {
+  id              String         @id @default(uuid())
+  name            String
+  campus          Campus
+  campusId        String?
+  locationDetails String?
+  seatingCapacity Int
+  hasProjector    Boolean        @default(false)
+  hasAC           Boolean        @default(false)
+  hasWifi         Boolean        @default(false)
+  imageUrl        String?
+  layoutType      VenueLayout    @default(GENERIC)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  sessions        EventSession[]
+  campusInfo      CampusInfo?    @relation(fields: [campusId], references: [id])
+
+  @@unique([name, campus])
+  @@index([campus])
+  @@map("venues")
+}
+
+model EventCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  iconUrl     String?
+  color       String?  @default("#0052CC")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  events      Event[]
+
+  @@map("event_categories")
+}
+
+model Event {
+  id                  String          @id @default(uuid())
+  title               String
+  slug                String          @unique
+  description         String?
+  shortDesc           String?
+  campus              Campus
+  campusId            String?
+  categoryId          String?
+  bannerUrl           String?
+  posterUrl           String?
+  tags                String[]
+  status              EventStatus     @default(DRAFT)
+  visibility          EventVisibility @default(PUBLIC)
+  registrationStart   DateTime?
+  registrationEnd     DateTime?
+  maxRegistrations    Int?
+  isFree              Boolean         @default(true)
+  ticketPrice         Float           @default(0)
+  prizePool           String?
+  teamSize            Int             @default(1)
+  isTeamEvent         Boolean         @default(false)
+  hasWaitlist         Boolean         @default(true)
+  certificateEligible Boolean         @default(true)
+  points              Int             @default(10)
+  aiExtracted         Boolean         @default(false)
+  aiConfidence        Float?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  clubId              String?
+  creatorId           String
+  attendances         Attendance[]
+  bookings            Booking[]
+  certificates        Certificate[]
+  feedback            EventFeedback[]
+  media               EventMedia[]
+  sessions            EventSession[]
+  campusInfo          CampusInfo?     @relation(fields: [campusId], references: [id])
+  category            EventCategory?  @relation(fields: [categoryId], references: [id])
+  club                Club?           @relation(fields: [clubId], references: [id])
+  creator             User            @relation("EventCreator", fields: [creatorId], references: [id])
+
+  @@index([campus])
+  @@index([status])
+  @@index([categoryId])
+  @@map("events")
+}
+
+model EventSession {
+  id          String        @id @default(uuid())
+  eventId     String
+  venueId     String
+  title       String?
+  sessionDate DateTime
+  startTime   String
+  endTime     String
+  totalSeats  Int
+  status      SessionStatus @default(SCHEDULED)
+  speakerName String?
+  speakerBio  String?
+  streamUrl   String?
+  seatLayout  Json?
+  createdAt   DateTime      @default(now())
+  bookings    Booking[]
+  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  venue       Venue         @relation(fields: [venueId], references: [id])
+  seats       Seat[]
+  waitlist    Waitlist[]
+
+  @@index([eventId])
+  @@index([sessionDate])
+  @@map("event_sessions")
+}
+
+model Seat {
+  id          String       @id @default(uuid())
+  sessionId   String
+  seatNumber  String
+  rowLabel    String?
+  seatType    SeatType     @default(GENERAL)
+  status      SeatStatus   @default(AVAILABLE)
+  lockedUntil DateTime?
+  lockedById  String?
+  bookedAt    DateTime?
+  createdAt   DateTime     @default(now())
+  booking     Booking?
+  lockedBy    User?        @relation("SeatLockedBy", fields: [lockedById], references: [id])
+  session     EventSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, seatNumber])
+  @@index([sessionId, status])
+  @@map("seats")
+}
+
+model Booking {
+  id                 String         @id @default(uuid())
+  bookingRef         String         @unique
+  userId             String
+  eventId            String
+  sessionId          String
+  seatId             String?        @unique
+  teamId             String?
+  status             BookingStatus  @default(PENDING)
+  paymentStatus      PaymentStatus  @default(FREE)
+  paymentRef         String?
+  razorpayPaymentId  String?
+  amountPaid         Float          @default(0)
+  gstAmount          Float          @default(0)
+  processingFee      Float          @default(0)
+  refundId           String?
+  refundAmount       Float?
+  refundInitiatedAt  DateTime?
+  cancellationReason String?
+  qrToken            String?        @unique
+  qrCodeUrl          String?
+  checkedIn          Boolean        @default(false)
+  checkedInAt        DateTime?
+  bookedAt           DateTime       @default(now())
+  confirmedAt        DateTime?
+  cancelledAt        DateTime?
+  event              Event          @relation(fields: [eventId], references: [id])
+  seat               Seat?          @relation(fields: [seatId], references: [id])
+  session            EventSession   @relation(fields: [sessionId], references: [id])
+  team               Team?          @relation(fields: [teamId], references: [id])
+  user               User           @relation(fields: [userId], references: [id])
+  notifications      Notification[]
+
+  @@unique([userId, sessionId])
+  @@index([eventId])
+  @@index([userId])
+  @@index([status])
+  @@index([qrToken])
+  @@map("bookings")
+}
+
+model Waitlist {
+  id            String       @id @default(uuid())
+  userId        String
+  sessionId     String
+  queuePosition Int
+  notified      Boolean      @default(false)
+  notifiedAt    DateTime?
+  joinedAt      DateTime     @default(now())
+  session       EventSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sessionId])
+  @@index([sessionId])
+  @@map("waitlist")
+}
+
+model Team {
+  id         String       @id @default(uuid())
+  name       String
+  eventId    String
+  creatorId  String
+  inviteCode String       @unique @default(cuid())
+  createdAt  DateTime     @default(now())
+  bookings   Booking[]
+  members    TeamMember[]
+  creator    User         @relation("TeamCreator", fields: [creatorId], references: [id])
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id     String @id @default(uuid())
+  teamId String
+  userId String
+  role   String @default("Member")
+  team   Team   @relation(fields: [teamId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model Club {
+  id              String            @id @default(uuid())
+  name            String
+  slug            String            @unique
+  description     String?
+  shortBio        String?
+  campus          Campus
+  category        String
+  logo            String?
+  coverImage      String?
+  instagramUrl    String?
+  linkedinUrl     String?
+  websiteUrl      String?
+  recruitmentOpen Boolean           @default(false)
+  points          Int               @default(0)
+  healthScore     Float             @default(0)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  presidentId     String?
+  facultyId       String?
+  achievements    ClubAchievement[]
+  gallery         ClubGallery[]
+  members         ClubMember[]
+  faculty         User?             @relation("FacultyCoordinator", fields: [facultyId], references: [id])
+  president       User?             @relation("ClubPresident", fields: [presidentId], references: [id])
+  events          Event[]
+  focActivities   FocActivity[]
+
+  @@index([campus])
+  @@index([category])
+  @@map("clubs")
+}
+
+model ClubMember {
+  id       String   @id @default(uuid())
+  userId   String
+  clubId   String
+  role     String   @default("Member")
+  joinedAt DateTime @default(now())
+  isActive Boolean  @default(true)
+  club     Club     @relation(fields: [clubId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, clubId])
+  @@map("club_members")
+}
+
+model ClubAchievement {
+  id          String   @id @default(uuid())
+  clubId      String
+  title       String
+  description String?
+  date        DateTime
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  club        Club     @relation(fields: [clubId], references: [id])
+
+  @@map("club_achievements")
+}
+
+model ClubGallery {
+  id         String   @id @default(uuid())
+  clubId     String
+  imageUrl   String
+  caption    String?
+  uploadedAt DateTime @default(now())
+  club       Club     @relation(fields: [clubId], references: [id])
+
+  @@map("club_gallery")
+}
+
+model Certificate {
+  id             String   @id @default(uuid())
+  userId         String
+  eventId        String
+  type           String
+  certificateUrl String?
+  issuedAt       DateTime @default(now())
+  verified       Boolean  @default(true)
+  hash           String   @unique
+  event          Event    @relation(fields: [eventId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@map("certificates")
+}
+
+model Attendance {
+  id              String   @id @default(uuid())
+  userId          String
+  eventId         String
+  sessionId       String?
+  scannedAt       DateTime @default(now())
+  scannedByUserId String?
+  event           Event    @relation(fields: [eventId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("attendances")
+}
+
+model UserBadge {
+  id       String    @id @default(uuid())
+  userId   String
+  type     BadgeType
+  label    String
+  earnedAt DateTime  @default(now())
+  user     User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type, label])
+  @@map("user_badges")
+}
+
+model Achievement {
+  id               String            @id @default(uuid())
+  key              String            @unique
+  name             String
+  description      String
+  icon             String
+  points           Int
+  category         String
+  isActive         Boolean           @default(true)
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id             String      @id @default(uuid())
+  userId         String
+  achievementId  String
+  achievementKey String
+  unlockedAt     DateTime    @default(now())
+  achievement    Achievement @relation(fields: [achievementId], references: [id])
+  user           User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, achievementKey])
+  @@map("user_achievements")
+}
+
+model FocActivity {
+  id           String    @id @default(uuid())
+  userId       String
+  clubId       String?
+  semester     String
+  activityType String
+  description  String?
+  proofUrl     String?
+  hours        Float     @default(0)
+  credits      Float     @default(0)
+  status       FocStatus @default(PENDING)
+  facultyNote  String?
+  approvedById String?
+  approvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  club         Club?     @relation(fields: [clubId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@map("foc_activities")
+}
+
+model SkillRadar {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  technical  Float    @default(0)
+  leadership Float    @default(0)
+  management Float    @default(0)
+  creative   Float    @default(0)
+  social     Float    @default(0)
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("skill_radar")
+}
+
+model PointTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  points      Int
+  reason      String
+  referenceId String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("point_transactions")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      NotifType @default(SYSTEM)
+  title     String
+  message   String
+  bookingId String?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  sentEmail Boolean   @default(false)
+  data      Json?
+  createdAt DateTime  @default(now())
+  booking   Booking?  @relation(fields: [bookingId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model Announcement {
+  id        String    @id @default(uuid())
+  campus    Campus?
+  title     String
+  content   String
+  authorId  String
+  pinned    Boolean   @default(false)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([campus])
+  @@map("announcements")
+}
+
+model EventFeedback {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id])
+
+  @@map("event_feedback")
+}
+
+model EventMedia {
+  id         String   @id @default(uuid())
+  eventId    String
+  url        String
+  type       String
+  caption    String?
+  uploadedAt DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id])
+
+  @@map("event_media")
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  tableName   String
+  recordId    String?
+  action      AuditAction
+  changedById String?
+  oldData     Json?
+  newData     Json?
+  ipAddress   String?
+  changedAt   DateTime    @default(now())
+  changedBy   User?       @relation("AuditUser", fields: [changedById], references: [id])
+
+  @@index([tableName, changedAt])
+  @@map("audit_logs")
+}
+
+
+enum VenueLayout {
+  AUDITORIUM
+  CLASSROOM
+  STADIUM
+  OPEN
+  THEATRE
+  LAB
+  GENERIC
+}
+
+enum Campus {
+  VELLORE
+  CHENNAI
+  AP
+  BHOPAL
+}
+
+enum Role {
+  STUDENT
+  EXTERNAL
+  CLUB_PRESIDENT
+  FACULTY
+  SUPER_ADMIN
+}
+
+enum SeatStatus {
+  AVAILABLE
+  LOCKED
+  BOOKED
+}
+
+enum SeatType {
+  GENERAL
+  VIP
+  PREMIUM
+  ACCESSIBLE
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EventVisibility {
+  PUBLIC
+  PRIVATE
+  INTERNAL
+}
+
+enum SessionStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  WAITLISTED
+}
+
+enum PaymentStatus {
+  FREE
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  REFUND_PENDING
+}
+
+enum FocStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum BadgeType {
+  ATTENDANCE
+  VOLUNTEER
+  WINNER
+  ORGANIZER
+  MENTOR
+  STREAK
+  SPECIAL
+}
+
+enum NotifType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  WAITLIST_PROMOTED
+  EVENT_REMINDER
+  EVENT_CANCELLED
+  PAYMENT_RECEIVED
+  ACHIEVEMENT_UNLOCKED
+  SYSTEM
+}
+
+enum AuditAction {
+  INSERT
+  UPDATE
+  DELETE
+}
