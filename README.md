@@ -1,9 +1,17 @@
-<<<<<<< HEAD
+
 # VITVerse 🎓
 ### 4 Campuses, 1 Smart Clubs & Events Ecosystem
 
 > A production-ready, full-stack platform for VIT Vellore, Chennai, AP, and Bhopal — featuring AI-powered recommendations, real-time seat booking, FFCS tracking, cross-campus leaderboards, and a student portfolio system.
 
+[![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org)
+[![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)](https://nestjs.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)](https://redis.io)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://docker.com)
+
+🔗 **[Live Demo](https://vitverse-chi.vercel.app)** · **[API Docs](http://localhost:4000/api/docs)**
 ---
 
 ## 🏗️ Architecture Overview
@@ -300,7 +308,10 @@ REDIS_PASSWORD=...
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
-=======
-# vitverse
-Full-stack VIT campus app | Next.js + NestJS + PostgreSQL + Redis + Socket.io + AI 
->>>>>>> 2a896cac63241c0a391475989396cf0f91d34018
+---
+
+<div align="center">
+
+Built by [Thisha Sampath](https://github.com/THISHA-SAMPATH) · VIT Chennai · 2024–28
+
+</div>
