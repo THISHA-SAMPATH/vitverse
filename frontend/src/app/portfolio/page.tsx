@@ -1,10 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Trophy, Star, Calendar, Users, Award, Download,
-  Share2, Edit3, ExternalLink, Zap, TrendingUp, BookOpen
+  Share2, Edit3, ExternalLink, Zap, TrendingUp, BookOpen, Loader2
 } from 'lucide-react';
 import { portfolioApi } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
@@ -37,18 +38,25 @@ export default function PortfolioPage() {
     enabled: !!user,
   });
 
+  const [downloadingResume, setDownloadingResume] = useState(false);
+
   const handleDownloadResume = async () => {
+    setDownloadingResume(true);
     try {
-      const { data } = await portfolioApi.resume();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+      const { data } = await portfolioApi.resumePdf();
+      const url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${user?.name?.replace(' ', '_')}_VITVerse_Resume.json`;
+      a.download = `${user?.name?.replace(/\s+/g, '_')}_VITVerse_Resume.pdf`;
+      document.body.appendChild(a);
       a.click();
-      toast.success('Resume downloaded!');
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Resume PDF downloaded!');
     } catch {
-      toast.error('Failed to generate resume');
+      toast.error('Failed to generate resume PDF');
+    } finally {
+      setDownloadingResume(false);
     }
   };
 
@@ -119,8 +127,13 @@ export default function PortfolioPage() {
               <button onClick={handleShare} className="btn-secondary gap-2 text-sm">
                 <Share2 className="h-4 w-4" /> Share
               </button>
-              <button onClick={handleDownloadResume} className="btn-primary gap-2 text-sm">
-                <Download className="h-4 w-4" /> Resume
+              <button onClick={handleDownloadResume} className="btn-primary gap-2 text-sm" disabled={downloadingResume}>
+                {downloadingResume ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                Resume PDF
               </button>
             </div>
           </div>

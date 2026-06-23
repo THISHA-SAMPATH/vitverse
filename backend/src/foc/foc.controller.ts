@@ -1,18 +1,23 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Response } from 'express';
 import { Role } from '@prisma/client';
 import { FocService, CreateFocActivityDto } from './foc.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { PdfService } from '../common/services/pdf.service';
 
 @ApiTags('foc')
 @Controller('foc')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class FocController {
-  constructor(private readonly focService: FocService) {}
+  constructor(
+    private readonly focService: FocService,
+    private readonly pdfService: PdfService,
+  ) {}
 
   @Get('my-activities')
   getMyActivities(@CurrentUser('id') userId: string, @Query('semester') semester?: string) {
@@ -32,6 +37,23 @@ export class FocController {
   @Get('report/:semester')
   generateReport(@CurrentUser('id') userId: string, @Param('semester') semester: string) {
     return this.focService.generateFocReport(userId, semester);
+  }
+
+  @Get('report/:semester/pdf')
+  @ApiOperation({ summary: 'Download FFCS/FOC activity report as PDF' })
+  async generateReportPdf(
+    @CurrentUser('id') userId: string,
+    @Param('semester') semester: string,
+    @Res() res: Response,
+  ) {
+    const data = await this.focService.generateFocReport(userId, semester);
+    const pdfBuffer = await this.pdfService.generateFocReportPdf(data);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="FOC_Report_${semester.replace(/\s+/g, '_')}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
   }
 
   @Get('pending-approvals')

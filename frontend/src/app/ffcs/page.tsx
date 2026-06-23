@@ -33,7 +33,29 @@ export default function FFCSPage() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [form, setForm] = useState({ clubId: '', activityType: '', description: '', hours: '', semester: SEMESTERS[0] });
+
+  const handleDownloadReport = async () => {
+    const sem = progress?.semester || SEMESTERS[0];
+    setDownloadingReport(true);
+    try {
+      const { data } = await focApi.reportPdf(sem);
+      const url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `FOC_Report_${sem.replace(/\s+/g, '_')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Report PDF downloaded!');
+    } catch (err) {
+      toast.error('Failed to download report PDF');
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
 
   const { data: progress, isLoading: progressLoading } = useQuery({
     queryKey: ['ffcs-progress'],
@@ -103,9 +125,19 @@ export default function FFCSPage() {
             Submit co-curricular activities, track FFCS credits, and monitor your semester progress.
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-          <Plus className="h-4 w-4" /> Log Activity
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button className="btn-secondary flex items-center gap-1.5" onClick={handleDownloadReport} disabled={downloadingReport}>
+            {downloadingReport ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4" />
+            )}
+            Download PDF Report
+          </button>
+          <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+            <Plus className="h-4 w-4" /> Log Activity
+          </button>
+        </div>
       </div>
 
       {/* Progress card */}
