@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -11,9 +12,11 @@ import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, LoginDto } from './auth.dto';
 import { Role } from '@prisma/client';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   // In production, store OTPs in Redis with TTL
   private otpStore = new Map<string, { otp: string; expiresAt: Date }>();
 
@@ -21,6 +24,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private email: EmailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -170,15 +174,33 @@ export class AuthService {
   private async generateAndSendOtp(email: string) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(email, { otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
-    // TODO: Send via nodemailer
-    console.log(`OTP for ${email}: ${otp}`); // Remove in production
+    
+    // Find student name if exists
+    const user = await this.prisma.user.findUnique({ where: { email }, select: { name: true } });
+    const name = user?.name || 'User';
+
+    // Call email service to send the OTP email
+    await this.email.sendOtp({ name, email }, otp).catch((err) => {
+      this.logger.error(`Failed to send verification OTP email: ${err.message}`);
+    });
+
+    console.log(`[Dev Fallback] OTP for ${email}: ${otp}`);
     return otp;
   }
 
   private determineRole(email: string): Role {
-    if (!email.includes('@vit.ac.in') && !email.includes('@vitap.ac.in') && !email.includes('@vitbhopal.ac.in')) {
-      return Role.EXTERNAL;
-    }
-    return Role.STUDENT;
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (!domain) return Role.EXTERNAL;
+
+    const vitDomains = [
+      'vit.ac.in',
+      'vitap.ac.in',
+      'vitbhopal.ac.in',
+      'vitstudent.ac.in',
+      'chennai.vit.ac.in',
+    ];
+
+    const isVit = vitDomains.some((d) => domain.endsWith(d));
+    return isVit ? Role.STUDENT : Role.EXTERNAL;
   }
 }
